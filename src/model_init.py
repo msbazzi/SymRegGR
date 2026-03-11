@@ -2,43 +2,78 @@
 
 Keeps parser and mechanics separate. Use parsed dataclasses as input:
 
-    native = parse_native_file("Native_in_Lamb.txt")
-    scaffold = parse_scaffold_file("Scaffold_in_Lamb.txt")
-
+    native, scaffold, immune = load_case("Native_in_Lamb", "Scaffold_in_Lamb", "Immune_in_Lamb")
     native_vessel = initialize_native(native)
-    tevg = initialize_tevg(scaffold=scaffold, native=native_vessel)
+    tevg = initialize_tevg(scaffold=scaffold, native=native_vessel, immune=immune)
 """
 
-from typing import Any, Optional
+from typing import Optional
 
-from .input_types import NativeParams, ScaffoldParams
+from input_types import ImmuneParams, NativeParams, ScaffoldParams
+from state_types import (
+    ConstituentMassState,
+    GeometryState,
+    HemodynamicState,
+    NativeVesselState,
+    ScaffoldState,
+    TEVGState,
+)
 
 
-def initialize_native(native: NativeParams) -> Any:
+def initialize_native(native: NativeParams) -> NativeVesselState:
     """Initialize native vessel from parsed NativeParams.
 
-    Returns a native vessel state object (to be implemented).
+    Returns NativeVesselState with geometry, constituents, hemodynamics.
     """
-    # TODO: Implement native vessel initialization
-    # For now, return the params as a placeholder
-    return native
+    # TODO: Port full C++ initialization logic
+    geometry = GeometryState(
+        a=native.radius * 1e-3,  # mm -> m
+        h=native.thickness * 1e-3,
+        a_mid=native.radius * 1e-3 + native.thickness * 1e-3 / 2,
+    )
+    constituents = ConstituentMassState(rhoR_alpha=[], epsilon_alpha=[])
+    hemodynamics = HemodynamicState(
+        P=native.P_h,
+        Q=native.Q_h,
+        bar_tauw=0.0,  # computed from Q
+    )
+    return NativeVesselState(
+        geometry=geometry,
+        constituents=constituents,
+        hemodynamics=hemodynamics,
+        s=0.0,
+        sn=0,
+    )
 
 
 def initialize_tevg(
     scaffold: ScaffoldParams,
-    native: Any,
-    immune_params: Optional[dict] = None,
-) -> Any:
+    native: NativeVesselState,
+    immune: Optional[ImmuneParams] = None,
+) -> TEVGState:
     """Initialize TEVG from scaffold params and native vessel state.
 
     Args:
         scaffold: Parsed scaffold parameters
         native: Native vessel state from initialize_native()
-        immune_params: Optional immune parameters (from Immune_in_* file)
+        immune: Immune parameters (from Immune_in_* file); required for TEVG
 
     Returns:
-        TEVG state object (to be implemented)
+        TEVGState
     """
-    # TODO: Implement TEVG initialization
-    # For now, return a placeholder
-    return {"scaffold": scaffold, "native": native, "immune_params": immune_params}
+    # TODO: Port full C++ TEVG initialization
+    geometry = GeometryState(
+        a=scaffold.radius * 1e-3,
+        h=scaffold.thickness * 1e-3,
+        a_mid=scaffold.radius * 1e-3 + scaffold.thickness * 1e-3 / 2,
+    )
+    constituents = ConstituentMassState(rhoR_alpha=[], epsilon_alpha=[])
+    hemodynamics = HemodynamicState(P=0.0, Q=0.0, bar_tauw=0.0)
+    return TEVGState(
+        geometry=geometry,
+        constituents=constituents,
+        hemodynamics=hemodynamics,
+        scaffold=ScaffoldState(),
+        s=0.0,
+        sn=0,
+    )

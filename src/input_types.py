@@ -42,6 +42,25 @@ class ScaffoldParams:
 
 
 @dataclass
+class ImmuneParams:
+    """Immune_in_* file: inflammation and degradation scaling."""
+    gamma_i_1: float
+    gamma_i_2: float
+    gamma_p_d1: float
+    K_i_p_mic: float
+    K_i_p_wound: float
+    K_i_d_max: float
+    delta_i_p: float
+    beta_i_p: float
+    ps_norm: float
+    fd_norm: float
+    infl_scale_trans: float
+    window_end: float
+    rat_smc2col_p: float
+    rat_smc2col_d: float
+
+
+@dataclass
 class NativeParams:
     vessel_name: str
     radius: float

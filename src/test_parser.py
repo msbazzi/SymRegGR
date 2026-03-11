@@ -1,15 +1,22 @@
 """Tests for Native_in_* and Scaffold_in_* parsers."""
 
+import sys
 import unittest
 from pathlib import Path
 
-from .input_parser import (
+# Ensure project root is on path when running this file directly (e.g. python test_parser.py)
+_project_root = Path(__file__).resolve().parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+from src.input_parser import (
     _clean_tokens,
     TokenReader,
+    parse_immune_file,
     parse_native_file,
     parse_scaffold_file,
 )
-from .input_types import NativeParams, ScaffoldParams
+from src.input_types import ImmuneParams, NativeParams, ScaffoldParams
 
 
 class TestCleanTokens(unittest.TestCase):
@@ -87,6 +94,44 @@ class TestParseNativeFile(unittest.TestCase):
         self.assertEqual(params.lambda_z_h, 1.0)
         self.assertEqual(params.P_h, 615.0)
         self.assertEqual(params.Q_h, 20.0)
+
+
+class TestParseImmuneFile(unittest.TestCase):
+    def test_parse_immune_file(self) -> None:
+        """Parse actual Immune_in_ file from G&R_TEVG."""
+        immune_path = Path(__file__).resolve().parent.parent / "G&R_TEVG" / "Immune_in_"
+        if not immune_path.exists():
+            self.skipTest(f"Immune file not found: {immune_path}")
+
+        params = parse_immune_file(immune_path)
+        self.assertIsInstance(params, ImmuneParams)
+        self.assertEqual(params.gamma_i_1, 5.0)
+        self.assertEqual(params.gamma_i_2, 1.0)
+        self.assertEqual(params.gamma_p_d1, 1.5)
+        self.assertEqual(params.window_end, 120.0)
+        self.assertEqual(params.rat_smc2col_p, 30.0)
+        self.assertEqual(params.rat_smc2col_d, 1.8)
+
+
+class TestLoadCase(unittest.TestCase):
+    def test_load_case(self) -> None:
+        """Load case with native, scaffold, and immune files."""
+        from src.load_case import load_case
+
+        base = Path(__file__).resolve().parent.parent / "G&R_TEVG"
+        if not (base / "Native_in_").exists():
+            self.skipTest("Input files not found")
+
+        native, scaffold, immune = load_case(
+            base / "Native_in_",
+            base / "Scaffold_in_",
+            base / "Immune_in_",
+        )
+        self.assertEqual(native.vessel_name, "Lamb_Thoracic_IVC")
+        self.assertEqual(scaffold.vessel_name, "Lamb_TEVG")
+        self.assertIsNotNone(immune)
+        if immune:
+            self.assertEqual(immune.gamma_i_1, 5.0)
 
 
 class TestAsdictExport(unittest.TestCase):

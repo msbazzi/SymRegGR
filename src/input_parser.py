@@ -16,7 +16,7 @@ Example:
 from pathlib import Path
 from typing import List, Union
 
-from .input_types import NativeParams, ScaffoldParams
+from input_types import ImmuneParams, NativeParams, ScaffoldParams
 
 
 def _clean_tokens(filepath: Union[str, Path]) -> List[str]:
@@ -185,6 +185,35 @@ def parse_native_file(filepath: Union[str, Path]) -> NativeParams:
     if not t.done():
         raise ValueError(
             f"Native file has extra unread tokens starting at index {t.i}: "
+            f"{t.tokens[t.i:t.i+10]}"
+        )
+
+    return params
+
+
+def parse_immune_file(filepath: Union[str, Path]) -> ImmuneParams:
+    t = TokenReader(_clean_tokens(filepath))
+
+    params = ImmuneParams(
+        gamma_i_1=t.read_float(),
+        gamma_i_2=t.read_float(),
+        gamma_p_d1=t.read_float(),
+        K_i_p_mic=t.read_float(),
+        K_i_p_wound=t.read_float(),
+        K_i_d_max=t.read_float(),
+        delta_i_p=t.read_float(),
+        beta_i_p=t.read_float(),
+        ps_norm=t.read_float(),
+        fd_norm=t.read_float(),
+        infl_scale_trans=t.read_float(),
+        window_end=t.read_float(),
+        rat_smc2col_p=t.read_float(),
+        rat_smc2col_d=t.read_float(),
+    )
+
+    if not t.done():
+        raise ValueError(
+            f"Immune file has extra unread tokens starting at index {t.i}: "
             f"{t.tokens[t.i:t.i+10]}"
         )
 
